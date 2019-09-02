@@ -73,6 +73,7 @@ if (NOT ANDROID)
 
     if (Boost_FOUND)
         message("Boost_FOUND true")
+        message(${Boost_LOCALE_LIBRARY})
         find_package(Boost COMPONENTS locale)
         target_link_libraries(${TARGET_NAME} wallet utility cli swap Boost::locale)
     else()
