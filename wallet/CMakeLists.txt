@@ -69,7 +69,12 @@ if (NOT ANDROID)
     configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version.h")
     target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-    target_link_libraries(${TARGET_NAME} wallet utility cli swap ${Boost_LOCALE_LIBRARY})
+    # if (Boost_FOUND)
+        find_package(Boost COMPONENTS locale)
+        target_link_libraries(${TARGET_NAME} wallet utility cli swap Boost::locale)
+    # else()
+        # target_link_libraries(${TARGET_NAME} wallet utility cli swap boost_locale)
+    # endif()
 
     add_library(wallet_api_proto STATIC api.cpp)
     target_link_libraries(wallet_api_proto wallet utility http)
