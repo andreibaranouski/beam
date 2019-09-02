@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(TARGET_NAME beam-wallet${BEAM_TARGET_SUFFIX})
 
 add_library(wallet STATIC)
@@ -69,12 +71,14 @@ if (NOT ANDROID)
     configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version.h")
     target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-    # if (Boost_FOUND)
+    if (Boost_FOUND)
+        message("Boost_FOUND true")
         find_package(Boost COMPONENTS locale)
         target_link_libraries(${TARGET_NAME} wallet utility cli swap Boost::locale)
-    # else()
-        # target_link_libraries(${TARGET_NAME} wallet utility cli swap boost_locale)
-    # endif()
+    else()
+        message("Boost_FOUND false")
+        target_link_libraries(${TARGET_NAME} wallet utility cli swap boost_locale)
+    endif()
 
     add_library(wallet_api_proto STATIC api.cpp)
     target_link_libraries(wallet_api_proto wallet utility http)
