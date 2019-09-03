@@ -17,7 +17,9 @@ before_build:
   - cmd: git clone --depth=1 https://github.com/BeamMW/libs.git c:/beam-libs
   - cmd: git clone --depth=1 https://github.com/nesbox/qt5-static-win.git c:/beam-libs/qt5-static-win
   - cmd: dir C:\Libraries\boost_1_69_0\lib64-msvc-14.1
-  - cmd: cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=%BUILD_CONFIG% -DBEAM_LINK_TYPE=Static -DBRANCH_NAME=%APPVEYOR_REPO_BRANCH% -DBEAM_BUILD_JNI=On -DBEAM_HW_WALLET=Off .
+  - cmd: dir C:\PROGRAM FILES (X86)\MICROSOFT VISUAL STUDIO\2017\COMMUNITY\COMMON7\IDE\COMMONEXTENSIONS\MICROSOFT\CMAKE
+
+  - cmd: cmake -G "Ninja" -DCMAKE_MAKE_PROGRAM="C:\PROGRAM FILES (X86)\MICROSOFT VISUAL STUDIO\2017\COMMUNITY\COMMON7\IDE\COMMONEXTENSIONS\MICROSOFT\CMAKE\Ninja\ninja.exe" -DCMAKE_BUILD_TYPE=%BUILD_CONFIG% -DBEAM_LINK_TYPE=Static -DBRANCH_NAME=%APPVEYOR_REPO_BRANCH% -DBEAM_BUILD_JNI=On -DBEAM_HW_WALLET=Off .
 
 test_script:
   - cmd: ctest -C %BUILD_CONFIG% --verbose
