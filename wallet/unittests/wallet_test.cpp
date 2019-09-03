@@ -50,6 +50,9 @@
 #include "wallet/hw_wallet.h"
 #endif
 
+#include "mnemonic/mnemonic.h"
+#include "core/block_rw.h"
+
 using namespace beam;
 using namespace std;
 using namespace ECC;
@@ -1748,8 +1751,21 @@ IWalletDB::Ptr createSqliteWalletDB()
     {
         boost::filesystem::remove(dbName);
     }
+
     ECC::NoLeak<ECC::uintBig> seed;
-    seed.V = Zero;
+    {
+        beam::WordList generatedPhrases = { "budget", "focus", "surface", "plug", "dragon", "elephant", "token", "child", "kitchen", "coast", "lounge", "mean" };
+        //beam::WordList generatedPhrases = { "copy", "vendor", "shallow", "raven", "coffee", "appear", "book", "blast", "lock", "exchange", "farm", "glue" };
+
+        auto buf = beam::decodeMnemonic(generatedPhrases);
+
+        SecString secretSeed;
+        secretSeed.assign(buf.data(), buf.size());
+
+        seed.V = secretSeed.hash().V;
+    }
+
+    //seed.V = Zero;
     auto walletDB = WalletDB::init(dbName, string("pass123"), seed, io::Reactor::get_Current().shared_from_this());
     beam::Block::SystemState::ID id = { };
     id.m_Height = 134;
@@ -1861,8 +1877,6 @@ void TestHWTransaction(IPrivateKeyKeeper& pkk)
         }
     }
 }
-
-#include "mnemonic/mnemonic.h"
 
 void TestHWCommitment()
 {
@@ -1982,6 +1996,62 @@ void TestHWWallet()
     }
 
 }
+
+void TestHWWalletRecover()
+{
+    cout << "Test HW wallet recover" << std::endl;
+
+    const ECC::Key::IDV kidv(100500, 15, Key::Type::Regular, 7, ECC::Key::IDV::Scheme::V0);
+
+    // test Output recover with LocalPrivateKeyKeeper
+    {
+        Height scheme = 100500;
+        io::Reactor::Ptr mainReactor{ io::Reactor::create() };
+        io::Reactor::Scope scope(*mainReactor);
+        LocalPrivateKeyKeeper kk(createSqliteWalletDB());
+        IPrivateKeyKeeper& pkk = kk;
+        ECC::Point::Native comm2;
+        auto outputs = pkk.GenerateOutputsSync(scheme, { kidv });
+        WALLET_CHECK(outputs[0]->IsValid(scheme, comm2));
+
+        {
+            ECC::Key::IDV locKidv;
+
+            // !!! WORKS HERE
+            WALLET_CHECK(outputs[0]->Recover(scheme, *pkk.get_OwnerKdf(), locKidv));
+        }
+    }
+
+    // test Output recover with TrezorKeyKeeper
+    {
+        Height scheme = 100500;
+        TrezorKeyKeeper kk;
+        IPrivateKeyKeeper& pkk = kk;
+        ECC::Point::Native comm2;
+        auto outputs = pkk.GenerateOutputsSync(scheme, { kidv });
+        WALLET_CHECK(outputs[0]->IsValid(scheme, comm2));
+
+        {
+            std::shared_ptr<ECC::HKdfPub> ownerKey = std::make_shared<ECC::HKdfPub>();
+
+            {
+                std::string ownerKeyEnc = "Ah63SvK3Fuf1JmN8isyw+tgXsgChP30SYAUIV5BNG4C02u2T5abyd8p/0h3LyLP92OZLVDE3iXP6pWNfw13W+ygJMFbrPk4jV3A3kw2pfydfE2vetIQaN0ziBXEmVbZ1BWBEh+Vgd7LXZ0bv";
+                std::string pin = "1";
+                beam::KeyString ks;
+                ks.SetPassword(Blob(pin.data(), static_cast<uint32_t>(pin.size())));
+                ks.m_sRes = ownerKeyEnc;
+                ks.Import(*ownerKey);
+            }
+
+            {
+                ECC::Key::IDV locKidv;
+
+                // !!! FAILS HERE
+                WALLET_CHECK(outputs[0]->Recover(scheme, *ownerKey, locKidv));
+            }
+        }
+    }
+}
 #endif
 
 int main()
@@ -1996,37 +2066,38 @@ int main()
     Rules::get().DA.MaxAhead_s = 60 * 1;
     Rules::get().UpdateChecksum();
 
-	TestNegotiation();
+	//TestNegotiation();
 
-    TestP2PWalletNegotiationST();
-    //TestP2PWalletReverseNegotiationST();
+ //   TestP2PWalletNegotiationST();
+ //   //TestP2PWalletReverseNegotiationST();
 
-    {
-        io::Reactor::Ptr mainReactor{ io::Reactor::create() };
-        io::Reactor::Scope scope(*mainReactor);
-        //TestWalletNegotiation(CreateWalletDB<TestWalletDB>(), CreateWalletDB<TestWalletDB2>());
-        TestWalletNegotiation(createSenderWalletDB(), createReceiverWalletDB());
-    }
+ //   {
+ //       io::Reactor::Ptr mainReactor{ io::Reactor::create() };
+ //       io::Reactor::Scope scope(*mainReactor);
+ //       //TestWalletNegotiation(CreateWalletDB<TestWalletDB>(), CreateWalletDB<TestWalletDB2>());
+ //       TestWalletNegotiation(createSenderWalletDB(), createReceiverWalletDB());
+ //   }
 
-    TestSplitTransaction();
+ //   TestSplitTransaction();
 
-    TestMinimalFeeTransaction();
+ //   TestMinimalFeeTransaction();
 
-    TestTxToHimself();
+ //   TestTxToHimself();
 
-    TestExpiredTransaction();
+ //   TestExpiredTransaction();
 
-    TestTransactionUpdate();
-    //TestTxPerformance();
-    //TestTxNonces();
+ //   TestTransactionUpdate();
+ //   //TestTxPerformance();
+ //   //TestTxNonces();
 
-    TestColdWalletSending();
-    TestColdWalletReceiving();
+ //   TestColdWalletSending();
+ //   TestColdWalletReceiving();
 
-    TestTxExceptionHandling();
+ //   TestTxExceptionHandling();
 #if defined(BEAM_HW_WALLET)
-    TestHWCommitment();
-    TestHWWallet();
+    //TestHWCommitment();
+    //TestHWWallet();
+    TestHWWalletRecover();
 #endif
 
     //TestBbsMessages();
