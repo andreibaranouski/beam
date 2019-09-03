@@ -19,8 +19,6 @@ before_build:
   - cmd: git apply 3rdparty/protobuf-patch.diff
   - cmd: git clone --depth=1 https://github.com/BeamMW/libs.git c:/beam-libs
   - cmd: git clone --depth=1 https://github.com/nesbox/qt5-static-win.git c:/beam-libs/qt5-static-win
-  - cmd: dir C:\Libraries\boost_1_69_0\lib64-msvc-14.1
-  - cmd: dir C:\PROGRAM FILES (X86)\MICROSOFT VISUAL STUDIO\2017\COMMUNITY\COMMON7\IDE\COMMONEXTENSIONS\MICROSOFT\CMAKE
 
   - cmd: cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=%BUILD_CONFIG% -DBEAM_LINK_TYPE=Static -DBRANCH_NAME=%APPVEYOR_REPO_BRANCH% -DBEAM_BUILD_JNI=On -DBEAM_HW_WALLET=Off .
 
