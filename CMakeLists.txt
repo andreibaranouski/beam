@@ -265,7 +265,11 @@ else()
         add_definitions(-DNOMINMAX)
     endif()
 
-    find_package(Boost REQUIRED)
+    if(APPLE)
+        find_package(Boost COMPONENTS locale REQUIRED)
+    else()
+        find_package(Boost REQUIRED)
+    endif()
 
     if(BEAM_USE_STATIC)
         include(FindBoost)
